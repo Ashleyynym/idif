@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { parsePastedText } from './utils/parser';
 import { matchEndTimes, aucInWindow } from './utils/auc';
 
