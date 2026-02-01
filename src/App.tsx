@@ -44,6 +44,41 @@ function App() {
     }
   };
 
+  const handleCellEdit = (
+    index: number,
+    field: 'time' | 'activity',
+    value: string,
+    points: Point[],
+    setPoints: (points: Point[]) => void
+  ) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) || value === '') {
+      const newPoints = [...points];
+      if (index < newPoints.length) {
+        newPoints[index] = { ...newPoints[index], [field]: isNaN(numValue) ? 0 : numValue };
+        // Sort by time after edit (but preserve the edited row's position if possible)
+        if (field === 'time') {
+          newPoints.sort((a, b) => a.time - b.time);
+        }
+        setPoints(newPoints);
+      }
+    }
+  };
+
+  const handleAddRow = (points: Point[], setPoints: (points: Point[]) => void) => {
+    const lastTime = points.length > 0 ? points[points.length - 1].time : 0;
+    const newPoint: Point = { time: lastTime + 5, activity: 0 };
+    setPoints([...points, newPoint].sort((a, b) => a.time - b.time));
+  };
+
+  const handleDeleteRow = (index: number, points: Point[], setPoints: (points: Point[]) => void) => {
+    if (points.length > 1) {
+      const newPoints = [...points];
+      newPoints.splice(index, 1);
+      setPoints(newPoints);
+    }
+  };
+
   const handleCompute = () => {
     setError(null);
     setWarnings([]);
@@ -175,39 +210,82 @@ function App() {
                     <tr>
                       <th>Time</th>
                       <th>Activity</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {realPoints.length === 0 ? (
                       <>
                         <tr className="placeholder-row">
-                          <td>0.0</td>
-                          <td>0.0</td>
+                          <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val && !isNaN(parseFloat(val))) {
+                              setRealPoints([{ time: parseFloat(val) || 0, activity: 0 }]);
+                            }
+                          }} /></td>
+                          <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val && !isNaN(parseFloat(val))) {
+                              setRealPoints([{ time: 0, activity: parseFloat(val) || 0 }]);
+                            }
+                          }} /></td>
+                          <td className="action-cell">
+                            <button className="add-row-btn" onClick={() => handleAddRow(realPoints, setRealPoints)} title="Add row">+</button>
+                          </td>
                         </tr>
-                        <tr className="placeholder-row">
-                          <td>5.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>10.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>15.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>20.0</td>
-                          <td>0.0</td>
-                        </tr>
+                        {[5, 10, 15, 20].map((t) => (
+                          <tr key={t} className="placeholder-row">
+                            <td><input type="number" step="0.1" defaultValue={t} className="editable-cell" disabled /></td>
+                            <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" disabled /></td>
+                            <td className="action-cell"></td>
+                          </tr>
+                        ))}
                       </>
                     ) : (
-                      realPoints.map((point, i) => (
-                        <tr key={i}>
-                          <td>{point.time}</td>
-                          <td>{point.activity}</td>
+                      <>
+                        {realPoints.map((point, i) => (
+                          <tr key={i}>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={point.time}
+                                className="editable-cell"
+                                onChange={(e) => handleCellEdit(i, 'time', e.target.value, realPoints, setRealPoints)}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val)) {
+                                    handleCellEdit(i, 'time', e.target.value, realPoints, setRealPoints);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={point.activity}
+                                className="editable-cell"
+                                onChange={(e) => handleCellEdit(i, 'activity', e.target.value, realPoints, setRealPoints)}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val)) {
+                                    handleCellEdit(i, 'activity', e.target.value, realPoints, setRealPoints);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="action-cell">
+                              <button className="delete-row-btn" onClick={() => handleDeleteRow(i, realPoints, setRealPoints)} title="Delete row">×</button>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <td colSpan={3} className="add-row-cell">
+                            <button className="add-row-btn" onClick={() => handleAddRow(realPoints, setRealPoints)}>+ Add Row</button>
+                          </td>
                         </tr>
-                      ))
+                      </>
                     )}
                   </tbody>
                 </table>
@@ -232,39 +310,82 @@ function App() {
                     <tr>
                       <th>Time (min)</th>
                       <th>Activity (Bq/ml)</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {combinedPoints.length === 0 ? (
                       <>
                         <tr className="placeholder-row">
-                          <td>0.0</td>
-                          <td>0.0</td>
+                          <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val && !isNaN(parseFloat(val))) {
+                              setCombinedPoints([{ time: parseFloat(val) || 0, activity: 0 }]);
+                            }
+                          }} /></td>
+                          <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val && !isNaN(parseFloat(val))) {
+                              setCombinedPoints([{ time: 0, activity: parseFloat(val) || 0 }]);
+                            }
+                          }} /></td>
+                          <td className="action-cell">
+                            <button className="add-row-btn" onClick={() => handleAddRow(combinedPoints, setCombinedPoints)} title="Add row">+</button>
+                          </td>
                         </tr>
-                        <tr className="placeholder-row">
-                          <td>5.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>10.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>15.0</td>
-                          <td>0.0</td>
-                        </tr>
-                        <tr className="placeholder-row">
-                          <td>20.0</td>
-                          <td>0.0</td>
-                        </tr>
+                        {[5, 10, 15, 20].map((t) => (
+                          <tr key={t} className="placeholder-row">
+                            <td><input type="number" step="0.1" defaultValue={t} className="editable-cell" disabled /></td>
+                            <td><input type="number" step="0.1" defaultValue="0.0" className="editable-cell" disabled /></td>
+                            <td className="action-cell"></td>
+                          </tr>
+                        ))}
                       </>
                     ) : (
-                      combinedPoints.map((point, i) => (
-                        <tr key={i}>
-                          <td>{point.time}</td>
-                          <td>{point.activity}</td>
+                      <>
+                        {combinedPoints.map((point, i) => (
+                          <tr key={i}>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={point.time}
+                                className="editable-cell"
+                                onChange={(e) => handleCellEdit(i, 'time', e.target.value, combinedPoints, setCombinedPoints)}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val)) {
+                                    handleCellEdit(i, 'time', e.target.value, combinedPoints, setCombinedPoints);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={point.activity}
+                                className="editable-cell"
+                                onChange={(e) => handleCellEdit(i, 'activity', e.target.value, combinedPoints, setCombinedPoints)}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val)) {
+                                    handleCellEdit(i, 'activity', e.target.value, combinedPoints, setCombinedPoints);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="action-cell">
+                              <button className="delete-row-btn" onClick={() => handleDeleteRow(i, combinedPoints, setCombinedPoints)} title="Delete row">×</button>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <td colSpan={3} className="add-row-cell">
+                            <button className="add-row-btn" onClick={() => handleAddRow(combinedPoints, setCombinedPoints)}>+ Add Row</button>
+                          </td>
                         </tr>
-                      ))
+                      </>
                     )}
                   </tbody>
                 </table>

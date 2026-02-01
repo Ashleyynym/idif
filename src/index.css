@@ -268,3 +268,72 @@ tr:hover {
 .data-table .placeholder-row td {
   opacity: 0.5;
 }
+
+.editable-cell {
+  width: 100%;
+  border: none;
+  padding: 4px 8px;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  text-align: left;
+}
+
+.editable-cell:focus {
+  background-color: #e3f2fd;
+  border-radius: 2px;
+}
+
+.editable-cell:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-cell {
+  width: 40px;
+  padding: 4px;
+  text-align: center;
+}
+
+.add-row-btn, .delete-row-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.add-row-btn:hover {
+  background: #45a049;
+}
+
+.delete-row-btn {
+  background: #f44336;
+  font-size: 20px;
+}
+
+.delete-row-btn:hover {
+  background: #da190b;
+}
+
+.add-row-cell {
+  text-align: center;
+  padding: 8px;
+  border-top: 2px solid #ddd;
+}
+
+.add-row-cell .add-row-btn {
+  width: auto;
+  padding: 4px 12px;
+  font-size: 14px;
+}
