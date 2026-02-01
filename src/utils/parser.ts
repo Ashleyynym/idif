@@ -11,6 +11,7 @@ export interface ParsedData {
 
 /**
  * Parse raw text into points without validation (for display purposes)
+ * Automatically adds (0, 0) if data doesn't start at time 0
  */
 export function parseRawPoints(text: string): Point[] {
   const lines = text.split('\n');
@@ -26,7 +27,7 @@ export function parseRawPoints(text: string): Point[] {
       parts = line.split(/\s+/);
     }
 
-    // Extract numeric values
+    // Extract numeric values (skip non-numeric headers)
     const numbers: number[] = [];
     for (const part of parts) {
       const num = parseFloat(part);
@@ -43,6 +44,14 @@ export function parseRawPoints(text: string): Point[] {
     if (!isNaN(time) && !isNaN(activity)) {
       points.push({ time, activity });
     }
+  }
+
+  // Sort by time
+  points.sort((a, b) => a.time - b.time);
+
+  // Automatically add (0, 0) if data doesn't start at time 0
+  if (points.length > 0 && points[0].time !== 0) {
+    points.unshift({ time: 0, activity: 0 });
   }
 
   return points;
@@ -93,9 +102,10 @@ export function parseCurve(text: string, curveName: string): { points: Point[]; 
   // Normalize curve
   const normalized = normalizeCurve(points, warnings);
 
-  // Check for time 0
-  if (normalized[0].time !== 0) {
-    throw new Error(`${curveName} curve must start at time 0`);
+  // Automatically add (0, 0) if data doesn't start at time 0
+  if (normalized.length > 0 && normalized[0].time !== 0) {
+    normalized.unshift({ time: 0, activity: 0 });
+    warnings.push(`${curveName} curve didn't start at time 0; automatically added point (0, 0)`);
   }
 
   return { points: normalized, warnings };

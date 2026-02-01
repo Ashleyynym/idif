@@ -179,9 +179,28 @@ function App() {
                   </thead>
                   <tbody>
                     {realPoints.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="empty-message">No data pasted yet</td>
-                      </tr>
+                      <>
+                        <tr className="placeholder-row">
+                          <td>0.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>5.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>10.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>15.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>20.0</td>
+                          <td>0.0</td>
+                        </tr>
+                      </>
                     ) : (
                       realPoints.map((point, i) => (
                         <tr key={i}>
@@ -217,9 +236,28 @@ function App() {
                   </thead>
                   <tbody>
                     {combinedPoints.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="empty-message">No data pasted yet</td>
-                      </tr>
+                      <>
+                        <tr className="placeholder-row">
+                          <td>0.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>5.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>10.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>15.0</td>
+                          <td>0.0</td>
+                        </tr>
+                        <tr className="placeholder-row">
+                          <td>20.0</td>
+                          <td>0.0</td>
+                        </tr>
+                      </>
                     ) : (
                       combinedPoints.map((point, i) => (
                         <tr key={i}>
