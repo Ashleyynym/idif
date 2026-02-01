@@ -10,6 +10,45 @@ export interface ParsedData {
 }
 
 /**
+ * Parse raw text into points without validation (for display purposes)
+ */
+export function parseRawPoints(text: string): Point[] {
+  const lines = text.split('\n');
+  const points: Point[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Try tab split first, then whitespace
+    let parts = line.split('\t');
+    if (parts.length < 2) {
+      parts = line.split(/\s+/);
+    }
+
+    // Extract numeric values
+    const numbers: number[] = [];
+    for (const part of parts) {
+      const num = parseFloat(part);
+      if (!isNaN(num)) {
+        numbers.push(num);
+      }
+    }
+
+    // Need at least 2 numbers for a pair (time, activity)
+    if (numbers.length < 2) continue;
+
+    const time = numbers[0];
+    const activity = numbers[1];
+    if (!isNaN(time) && !isNaN(activity)) {
+      points.push({ time, activity });
+    }
+  }
+
+  return points;
+}
+
+/**
  * Parse a single curve from pasted text (expects Time and Activity columns)
  */
 export function parseCurve(text: string, curveName: string): { points: Point[]; warnings: string[] } {

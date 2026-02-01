@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { parsePastedText } from './utils/parser';
+import { useState, useRef } from 'react';
+import { parsePastedText, parseRawPoints, Point } from './utils/parser';
 import { matchEndTimes, aucInWindow } from './utils/auc';
 
 interface AUCResult {
@@ -10,14 +10,39 @@ interface AUCResult {
 }
 
 function App() {
-  const [realText, setRealText] = useState('');
-  const [combinedText, setCombinedText] = useState('');
+  const [realPoints, setRealPoints] = useState<Point[]>([]);
+  const [combinedPoints, setCombinedPoints] = useState<Point[]>([]);
   const [timeCutoffs, setTimeCutoffs] = useState([5, 10]);
   const [results, setResults] = useState<AUCResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [tEndCommon, setTEndCommon] = useState<number | null>(null);
   const [decimalPlaces, setDecimalPlaces] = useState(4);
+  const realPasteRef = useRef<HTMLDivElement>(null);
+  const combinedPasteRef = useRef<HTMLDivElement>(null);
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>, setPoints: (points: Point[]) => void, pasteAreaRef: React.RefObject<HTMLDivElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const points = parseRawPoints(pastedText);
+    setPoints(points);
+    // Clear the paste area after successful parse
+    if (pasteAreaRef.current) {
+      pasteAreaRef.current.textContent = '';
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, setPoints: (points: Point[]) => void) => {
+    // Handle Ctrl+V or Cmd+V
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      // The paste event will handle it
+      return;
+    }
+    // Clear on Delete or Backspace when focused and empty
+    if ((e.key === 'Delete' || e.key === 'Backspace') && e.currentTarget.textContent === '') {
+      setPoints([]);
+    }
+  };
 
   const handleCompute = () => {
     setError(null);
@@ -26,7 +51,11 @@ function App() {
     setTEndCommon(null);
 
     try {
-      // Parse input
+      // Convert points back to text format for parsing (with validation)
+      const realText = realPoints.map(p => `${p.time}\t${p.activity}`).join('\n');
+      const combinedText = combinedPoints.map(p => `${p.time}\t${p.activity}`).join('\n');
+      
+      // Parse input with validation
       const parsed = parsePastedText(realText, combinedText);
       setWarnings(parsed.warnings);
 
@@ -129,24 +158,80 @@ function App() {
       <div className="input-section">
         <div className="input-group-grid">
           <div className="input-group">
-            <label htmlFor="real-input">Paste Real curve (Time, Activity)</label>
-            <textarea
-              id="real-input"
-              value={realText}
-              onChange={(e) => setRealText(e.target.value)}
-              placeholder="Paste Real curve data here&#10;Format: Time [tab/space] Activity&#10;Example:&#10;0    1000&#10;5    800&#10;10   600"
-              style={{ minHeight: '200px' }}
-            />
+            <label>Paste Real curve (Time, Activity)</label>
+            <div className="pasteable-table-container">
+              <div
+                ref={realPasteRef}
+                className="paste-area"
+                contentEditable
+                onPaste={(e) => handlePaste(e, setRealPoints, realPasteRef)}
+                onKeyDown={(e) => handleKeyDown(e, setRealPoints)}
+                suppressContentEditableWarning={true}
+                data-placeholder="Click here and paste your Real curve data (Time [tab/space] Activity)"
+              />
+              <div className="data-table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Activity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {realPoints.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="empty-message">No data pasted yet</td>
+                      </tr>
+                    ) : (
+                      realPoints.map((point, i) => (
+                        <tr key={i}>
+                          <td>{point.time}</td>
+                          <td>{point.activity}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
           <div className="input-group">
-            <label htmlFor="combined-input">Paste Combined curve (Time[min], Activity[Bq/ml])</label>
-            <textarea
-              id="combined-input"
-              value={combinedText}
-              onChange={(e) => setCombinedText(e.target.value)}
-              placeholder="Paste Combined curve data here&#10;Format: Time[min] [tab/space] Activity[Bq/ml]&#10;Example:&#10;0    950&#10;5    750&#10;10   580"
-              style={{ minHeight: '200px' }}
-            />
+            <label>Paste Combined curve (Time[min], Activity[Bq/ml])</label>
+            <div className="pasteable-table-container">
+              <div
+                ref={combinedPasteRef}
+                className="paste-area"
+                contentEditable
+                onPaste={(e) => handlePaste(e, setCombinedPoints, combinedPasteRef)}
+                onKeyDown={(e) => handleKeyDown(e, setCombinedPoints)}
+                suppressContentEditableWarning={true}
+                data-placeholder="Click here and paste your Combined curve data (Time [tab/space] Activity)"
+              />
+              <div className="data-table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time (min)</th>
+                      <th>Activity (Bq/ml)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {combinedPoints.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="empty-message">No data pasted yet</td>
+                      </tr>
+                    ) : (
+                      combinedPoints.map((point, i) => (
+                        <tr key={i}>
+                          <td>{point.time}</td>
+                          <td>{point.activity}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
