@@ -10,7 +10,8 @@ interface AUCResult {
 }
 
 function App() {
-  const [inputText, setInputText] = useState('');
+  const [realText, setRealText] = useState('');
+  const [combinedText, setCombinedText] = useState('');
   const [timeCutoffs, setTimeCutoffs] = useState([5, 10]);
   const [results, setResults] = useState<AUCResult[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ function App() {
 
     try {
       // Parse input
-      const parsed = parsePastedText(inputText);
+      const parsed = parsePastedText(realText, combinedText);
       setWarnings(parsed.warnings);
 
       // Match end times
@@ -126,14 +127,27 @@ function App() {
       <h1>IDIF AUC Calculator</h1>
       
       <div className="input-section">
-        <div className="input-group">
-          <label htmlFor="data-input">Paste dataset</label>
-          <textarea
-            id="data-input"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Paste your data here (Time Real combined Time[min] Activity[Bq/ml])"
-          />
+        <div className="input-group-grid">
+          <div className="input-group">
+            <label htmlFor="real-input">Paste Real curve (Time, Activity)</label>
+            <textarea
+              id="real-input"
+              value={realText}
+              onChange={(e) => setRealText(e.target.value)}
+              placeholder="Paste Real curve data here&#10;Format: Time [tab/space] Activity&#10;Example:&#10;0    1000&#10;5    800&#10;10   600"
+              style={{ minHeight: '200px' }}
+            />
+          </div>
+          <div className="input-group">
+            <label htmlFor="combined-input">Paste Combined curve (Time[min], Activity[Bq/ml])</label>
+            <textarea
+              id="combined-input"
+              value={combinedText}
+              onChange={(e) => setCombinedText(e.target.value)}
+              placeholder="Paste Combined curve data here&#10;Format: Time[min] [tab/space] Activity[Bq/ml]&#10;Example:&#10;0    950&#10;5    750&#10;10   580"
+              style={{ minHeight: '200px' }}
+            />
+          </div>
         </div>
 
         <div className="controls">

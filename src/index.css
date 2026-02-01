@@ -39,6 +39,19 @@ h1 {
   margin-bottom: 20px;
 }
 
+.input-group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .input-group-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 label {
   display: block;
   margin-bottom: 8px;

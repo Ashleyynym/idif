@@ -10,12 +10,11 @@ export interface ParsedData {
 }
 
 /**
- * Parse pasted text into Real and Combined curve points
+ * Parse a single curve from pasted text (expects Time and Activity columns)
  */
-export function parsePastedText(text: string): ParsedData {
+export function parseCurve(text: string, curveName: string): { points: Point[]; warnings: string[] } {
   const lines = text.split('\n');
-  const realPoints: Point[] = [];
-  const combinedPoints: Point[] = [];
+  const points: Point[] = [];
   const warnings: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -37,54 +36,43 @@ export function parsePastedText(text: string): ParsedData {
       }
     }
 
-    // Need at least 2 numbers for a pair
+    // Need at least 2 numbers for a pair (time, activity)
     if (numbers.length < 2) continue;
 
-    // Parse based on position:
-    // Real: first two numbers (time, activity)
-    // Combined: third and fourth numbers (time, activity)
-    
-    if (numbers.length >= 2) {
-      const realTime = numbers[0];
-      const realActivity = numbers[1];
-      if (!isNaN(realTime) && !isNaN(realActivity)) {
-        realPoints.push({ time: realTime, activity: realActivity });
-      }
-    }
-
-    if (numbers.length >= 4) {
-      const combTime = numbers[2];
-      const combActivity = numbers[3];
-      if (!isNaN(combTime) && !isNaN(combActivity)) {
-        combinedPoints.push({ time: combTime, activity: combActivity });
-      }
+    const time = numbers[0];
+    const activity = numbers[1];
+    if (!isNaN(time) && !isNaN(activity)) {
+      points.push({ time, activity });
     }
   }
 
   // Validate minimum points
-  if (realPoints.length < 2) {
-    throw new Error(`Insufficient Real curve points: found ${realPoints.length}, need at least 2`);
-  }
-  if (combinedPoints.length < 2) {
-    throw new Error(`Insufficient Combined curve points: found ${combinedPoints.length}, need at least 2`);
+  if (points.length < 2) {
+    throw new Error(`Insufficient ${curveName} curve points: found ${points.length}, need at least 2`);
   }
 
-  // Normalize curves
-  const normalizedReal = normalizeCurve(realPoints, warnings);
-  const normalizedCombined = normalizeCurve(combinedPoints, warnings);
+  // Normalize curve
+  const normalized = normalizeCurve(points, warnings);
 
   // Check for time 0
-  if (normalizedReal[0].time !== 0) {
-    throw new Error('Real curve must start at time 0');
-  }
-  if (normalizedCombined[0].time !== 0) {
-    throw new Error('Combined curve must start at time 0');
+  if (normalized[0].time !== 0) {
+    throw new Error(`${curveName} curve must start at time 0`);
   }
 
+  return { points: normalized, warnings };
+}
+
+/**
+ * Parse pasted text into Real and Combined curve points (legacy function for backward compatibility)
+ */
+export function parsePastedText(realText: string, combinedText: string): ParsedData {
+  const realResult = parseCurve(realText, 'Real');
+  const combinedResult = parseCurve(combinedText, 'Combined');
+
   return {
-    realPoints: normalizedReal,
-    combinedPoints: normalizedCombined,
-    warnings
+    realPoints: realResult.points,
+    combinedPoints: combinedResult.points,
+    warnings: [...realResult.warnings, ...combinedResult.warnings]
   };
 }
 
