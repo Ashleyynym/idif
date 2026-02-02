@@ -275,8 +275,7 @@ function App() {
     if (!chartData) {
       return {
         responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: 1.5, // width/height = 3/2, so height = 2/3 of width
+        maintainAspectRatio: false,
         plugins: {
           legend: { position: 'top' as const },
           title: { display: false },
@@ -309,8 +308,7 @@ function App() {
 
     return {
       responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 1.5, // width/height = 3/2, so height = 2/3 of width
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'top' as const,
