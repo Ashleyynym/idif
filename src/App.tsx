@@ -246,11 +246,11 @@ function App() {
           tension: 0.1,
           pointRadius: 3,
           pointHoverRadius: 5,
-          pointBackgroundColor: 'rgb(75, 192, 192)',
-          pointBorderColor: '#fff',
+          pointBackgroundColor: 'rgb(47, 150, 150)', // Darker than line color
+          pointBorderColor: 'rgb(47, 150, 150)', // Match point color
           pointBorderWidth: 1,
-          pointHoverBackgroundColor: 'rgba(75, 192, 192, 0.6)',
-          pointHoverBorderColor: 'rgb(75, 192, 192)',
+          pointHoverBackgroundColor: 'rgba(47, 150, 150, 0.6)',
+          pointHoverBorderColor: 'rgb(47, 150, 150)',
         },
         {
           label: 'Combined (IDIF)',
@@ -261,11 +261,11 @@ function App() {
           tension: 0.1,
           pointRadius: 3,
           pointHoverRadius: 5,
-          pointBackgroundColor: 'rgb(255, 99, 132)',
-          pointBorderColor: '#fff',
+          pointBackgroundColor: 'rgb(200, 50, 80)', // Darker than line color
+          pointBorderColor: 'rgb(200, 50, 80)', // Match point color
           pointBorderWidth: 1,
-          pointHoverBackgroundColor: 'rgba(255, 99, 132, 0.6)',
-          pointHoverBorderColor: 'rgb(255, 99, 132)',
+          pointHoverBackgroundColor: 'rgba(200, 50, 80, 0.6)',
+          pointHoverBorderColor: 'rgb(200, 50, 80)',
         },
       ],
       // Store clipped data for scale calculation
