@@ -230,21 +230,12 @@ function App() {
     const realClipped = clipCurveToInterval(realCurve, startTime, endTime);
     const combinedClipped = clipCurveToInterval(combinedCurve, startTime, endTime);
 
-    // Prepare data for Chart.js
-    const labels = Array.from(new Set([...realClipped.map(p => p.time), ...combinedClipped.map(p => p.time)])).sort((a, b) => a - b);
-    
-    const realData = labels.map(time => {
-      const point = realClipped.find(p => Math.abs(p.time - time) < 0.0001);
-      return point ? point.activity : null;
-    });
-
-    const combinedData = labels.map(time => {
-      const point = combinedClipped.find(p => Math.abs(p.time - time) < 0.0001);
-      return point ? point.activity : null;
-    });
+    // Use actual points from each curve - Chart.js will handle the x-axis
+    // Format: { x: time, y: activity } for each point
+    const realData = realClipped.map(p => ({ x: p.time, y: p.activity }));
+    const combinedData = combinedClipped.map(p => ({ x: p.time, y: p.activity }));
 
     return {
-      labels: labels.map(t => t.toFixed(2)),
       datasets: [
         {
           label: 'Real',
@@ -253,6 +244,8 @@ function App() {
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           fill: true,
           tension: 0.1,
+          pointRadius: 2,
+          pointHoverRadius: 4,
         },
         {
           label: 'Combined (IDIF)',
@@ -261,6 +254,8 @@ function App() {
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
           fill: true,
           tension: 0.1,
+          pointRadius: 2,
+          pointHoverRadius: 4,
         },
       ],
       // Store clipped data for scale calculation
