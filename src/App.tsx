@@ -49,6 +49,8 @@ function App() {
     'combined': null,
   });
   const [yTickInterval, setYTickInterval] = useState<number | null>(null);
+  const [showLines, setShowLines] = useState<boolean>(true);
+  const [showShading, setShowShading] = useState<boolean>(true);
   const realPasteRef = useRef<HTMLDivElement>(null);
   const combinedPasteRef = useRef<HTMLDivElement>(null);
 
@@ -242,7 +244,8 @@ function App() {
           data: realData,
           borderColor: 'rgb(75, 192, 192)',
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          fill: true,
+          fill: showShading,
+          borderWidth: showLines ? 2 : 0,
           tension: 0.1,
           pointRadius: 3,
           pointHoverRadius: 5,
@@ -257,7 +260,8 @@ function App() {
           data: combinedData,
           borderColor: 'rgb(255, 99, 132)',
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          fill: true,
+          fill: showShading,
+          borderWidth: showLines ? 2 : 0,
           tension: 0.1,
           pointRadius: 3,
           pointHoverRadius: 5,
@@ -805,6 +809,24 @@ function App() {
           {matchedCurves && tEndCommon !== null && (
             <div className="charts-section">
               <h2 style={{ marginTop: '40px', marginBottom: '20px' }}>Time-Activity Curves</h2>
+              <div style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '4px', display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showLines}
+                    onChange={(e) => setShowLines(e.target.checked)}
+                  />
+                  <span>Show lines connecting points</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showShading}
+                    onChange={(e) => setShowShading(e.target.checked)}
+                  />
+                  <span>Show area shading</span>
+                </label>
+              </div>
               <div className="charts-grid">
                 <div className="chart-container">
                   <h3>0-5 min</h3>
