@@ -42,13 +42,13 @@ function App() {
   const [tEndCommon, setTEndCommon] = useState<number | null>(null);
   const [decimalPlaces, setDecimalPlaces] = useState(4);
   const [matchedCurves, setMatchedCurves] = useState<{ real: Point[]; combined: Point[] } | null>(null);
-  const [xTickInterval, setXTickInterval] = useState<{ [key: string]: number }>({
-    '0-5': 1,
-    '0-10': 2,
-    '10-end': 20,
-    'combined': 20,
+  const [xTickInterval, setXTickInterval] = useState<{ [key: string]: number | null }>({
+    '0-5': null,
+    '0-10': null,
+    '10-end': null,
+    'combined': null,
   });
-  const [yTickInterval, setYTickInterval] = useState(5000);
+  const [yTickInterval, setYTickInterval] = useState<number | null>(null);
   const realPasteRef = useRef<HTMLDivElement>(null);
   const combinedPasteRef = useRef<HTMLDivElement>(null);
 
@@ -271,6 +271,21 @@ function App() {
     };
   };
 
+  // Helper function to calculate nice tick interval
+  const calculateNiceTickInterval = (range: number, targetTicks: number = 5): number => {
+    const rawInterval = range / targetTicks;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawInterval)));
+    const normalized = rawInterval / magnitude;
+    
+    let niceInterval;
+    if (normalized <= 1) niceInterval = 1;
+    else if (normalized <= 2) niceInterval = 2;
+    else if (normalized <= 5) niceInterval = 5;
+    else niceInterval = 10;
+    
+    return niceInterval * magnitude;
+  };
+
   const createChartOptions = (chartData: any, chartType: string) => {
     if (!chartData) {
       return {
@@ -290,10 +305,15 @@ function App() {
     // Calculate min/max for x-axis (time)
     const xMin = chartData.startTime;
     const xMax = chartData.endTime;
-    const xPadding = (xMax - xMin) * 0.05; // 5% padding
+    const xRange = xMax - xMin;
+    const xPadding = xRange * 0.05; // 5% padding
 
-    // Get tick interval for this chart type
-    const xTick = xTickInterval[chartType] || 1;
+    // Automatically calculate x-axis tick interval based on range
+    const autoXTick = calculateNiceTickInterval(xRange, 5);
+    // Use custom tick if set, otherwise use auto-calculated
+    const xTick = (xTickInterval[chartType] !== null && xTickInterval[chartType] !== undefined) 
+      ? xTickInterval[chartType]! 
+      : autoXTick;
 
     // Calculate max for y-axis (activity)
     const allActivities = [
@@ -302,9 +322,18 @@ function App() {
     ].filter((val: number | null) => val !== null) as number[];
 
     const yMax = Math.max(...allActivities);
+    const yMin = Math.min(...allActivities, 0);
+    const yRange = yMax - yMin;
     
-    // Round yMax up to nearest multiple of yTickInterval
-    const yMaxRounded = Math.ceil(yMax / yTickInterval) * yTickInterval;
+    // Automatically calculate y-axis tick interval based on range
+    const autoYTick = calculateNiceTickInterval(yRange, 5);
+    // Use custom tick if set, otherwise use auto-calculated
+    const finalYTick = (yTickInterval !== null && yTickInterval !== undefined) 
+      ? yTickInterval 
+      : autoYTick;
+    
+    // Round yMax up to nearest multiple of tick interval
+    const yMaxRounded = Math.ceil(yMax / finalYTick) * finalYTick;
 
     return {
       responsive: true,
@@ -334,7 +363,7 @@ function App() {
           min: 0,
           max: yMaxRounded,
           ticks: {
-            stepSize: yTickInterval,
+            stepSize: finalYTick,
           },
           title: {
             display: true,
@@ -591,56 +620,76 @@ function App() {
           <div className="controls" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
             <h3 style={{ width: '100%', marginBottom: '15px', fontSize: '16px' }}>Chart Axis Scaling</h3>
             <div className="control-item">
-              <label htmlFor="y-tick">Y-axis tick interval (Bq/ml)</label>
+              <label htmlFor="y-tick">Y-axis tick interval (Bq/ml) - Auto if empty</label>
               <input
                 id="y-tick"
                 type="number"
-                value={yTickInterval}
-                onChange={(e) => setYTickInterval(Math.max(1, parseFloat(e.target.value) || 5000))}
+                value={yTickInterval || ''}
+                placeholder="Auto"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setYTickInterval(val === '' ? null : Math.max(1, parseFloat(val) || 1));
+                }}
                 step="100"
                 min="1"
               />
             </div>
             <div className="control-item">
-              <label htmlFor="x-tick-05">X-axis tick (0-5 min)</label>
+              <label htmlFor="x-tick-05">X-axis tick (0-5 min) - Auto if empty</label>
               <input
                 id="x-tick-05"
                 type="number"
-                value={xTickInterval['0-5']}
-                onChange={(e) => setXTickInterval({ ...xTickInterval, '0-5': Math.max(0.1, parseFloat(e.target.value) || 1) })}
+                value={xTickInterval['0-5'] || ''}
+                placeholder="Auto"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setXTickInterval({ ...xTickInterval, '0-5': val === '' ? null : Math.max(0.1, parseFloat(val) || 0.1) });
+                }}
                 step="0.1"
                 min="0.1"
               />
             </div>
             <div className="control-item">
-              <label htmlFor="x-tick-010">X-axis tick (0-10 min)</label>
+              <label htmlFor="x-tick-010">X-axis tick (0-10 min) - Auto if empty</label>
               <input
                 id="x-tick-010"
                 type="number"
-                value={xTickInterval['0-10']}
-                onChange={(e) => setXTickInterval({ ...xTickInterval, '0-10': Math.max(0.1, parseFloat(e.target.value) || 2) })}
+                value={xTickInterval['0-10'] || ''}
+                placeholder="Auto"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setXTickInterval({ ...xTickInterval, '0-10': val === '' ? null : Math.max(0.1, parseFloat(val) || 0.1) });
+                }}
                 step="0.1"
                 min="0.1"
               />
             </div>
             <div className="control-item">
-              <label htmlFor="x-tick-10end">X-axis tick (10-end)</label>
+              <label htmlFor="x-tick-10end">X-axis tick (10-end) - Auto if empty</label>
               <input
                 id="x-tick-10end"
                 type="number"
-                value={xTickInterval['10-end']}
-                onChange={(e) => setXTickInterval({ ...xTickInterval, '10-end': Math.max(1, parseFloat(e.target.value) || 20) })}
+                value={xTickInterval['10-end'] || ''}
+                placeholder="Auto"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setXTickInterval({ ...xTickInterval, '10-end': val === '' ? null : Math.max(1, parseFloat(val) || 1) });
+                }}
                 step="1"
                 min="1"
               />
             </div>
             <div className="control-item">
-              <label htmlFor="x-tick-combined">X-axis tick (Combined)</label>
+              <label htmlFor="x-tick-combined">X-axis tick (Combined) - Auto if empty</label>
               <input
                 id="x-tick-combined"
                 type="number"
-                value={xTickInterval['combined']}
-                onChange={(e) => setXTickInterval({ ...xTickInterval, 'combined': Math.max(1, parseFloat(e.target.value) || 20) })}
+                value={xTickInterval['combined'] || ''}
+                placeholder="Auto"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setXTickInterval({ ...xTickInterval, 'combined': val === '' ? null : Math.max(1, parseFloat(val) || 1) });
+                }}
                 step="1"
                 min="1"
               />
