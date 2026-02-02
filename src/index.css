@@ -337,3 +337,83 @@ tr:hover {
   padding: 4px 12px;
   font-size: 14px;
 }
+
+.charts-section {
+  margin-top: 40px;
+}
+
+.charts-section h2 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-height: 300px;
+}
+
+.chart-container h3 {
+  margin: 0 0 15px 0;
+  color: #555;
+  font-size: 18px;
+  text-align: center;
+}
+
+.graphs-section {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid #ddd;
+}
+
+.graphs-section h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.graphs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 20px;
+}
+
+@media (max-width: 968px) {
+  .graphs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.graph-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.graph-container h3 {
+  margin: 0 0 15px 0;
+  color: #555;
+  font-size: 18px;
+}
+
+.chart-wrapper {
+  height: 300px;
+  position: relative;
+}

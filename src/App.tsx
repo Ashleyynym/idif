@@ -1,6 +1,29 @@
 import { useState, useRef } from 'react';
 import { parsePastedText, parseRawPoints, Point } from './utils/parser';
-import { matchEndTimes, aucInWindow } from './utils/auc';
+import { matchEndTimes, aucInWindow, clipCurveToInterval } from './utils/auc';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface AUCResult {
   label: string;
@@ -18,6 +41,7 @@ function App() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [tEndCommon, setTEndCommon] = useState<number | null>(null);
   const [decimalPlaces, setDecimalPlaces] = useState(4);
+  const [matchedCurves, setMatchedCurves] = useState<{ real: Point[]; combined: Point[] } | null>(null);
   const realPasteRef = useRef<HTMLDivElement>(null);
   const combinedPasteRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +121,10 @@ function App() {
       // Match end times
       const matched = matchEndTimes(parsed.realPoints, parsed.combinedPoints);
       setTEndCommon(matched.tEndCommon);
+      setMatchedCurves({
+        real: matched.realMatched,
+        combined: matched.combinedMatched
+      });
 
       // Validate t_end_common > 10 for 10-end computation
       if (matched.tEndCommon <= 10) {
@@ -184,6 +212,78 @@ function App() {
       return bias.toFixed(9);
     }
     return '-';
+  };
+
+  const createChartData = (realCurve: Point[], combinedCurve: Point[], startTime: number, endTime: number) => {
+    if (!realCurve || !combinedCurve || realCurve.length === 0 || combinedCurve.length === 0) {
+      return null;
+    }
+
+    // Clip curves to the window
+    const realClipped = clipCurveToInterval(realCurve, startTime, endTime);
+    const combinedClipped = clipCurveToInterval(combinedCurve, startTime, endTime);
+
+    // Prepare data for Chart.js
+    const labels = Array.from(new Set([...realClipped.map(p => p.time), ...combinedClipped.map(p => p.time)])).sort((a, b) => a - b);
+    
+    const realData = labels.map(time => {
+      const point = realClipped.find(p => Math.abs(p.time - time) < 0.0001);
+      return point ? point.activity : null;
+    });
+
+    const combinedData = labels.map(time => {
+      const point = combinedClipped.find(p => Math.abs(p.time - time) < 0.0001);
+      return point ? point.activity : null;
+    });
+
+    return {
+      labels: labels.map(t => t.toFixed(2)),
+      datasets: [
+        {
+          label: 'Real',
+          data: realData,
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          fill: true,
+          tension: 0.1,
+        },
+        {
+          label: 'Combined (IDIF)',
+          data: combinedData,
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          fill: true,
+          tension: 0.1,
+        },
+      ],
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (min)',
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Activity (Bq/ml)',
+        },
+      },
+    },
   };
 
   return (
@@ -482,6 +582,50 @@ function App() {
               Copy TSV
             </button>
           </div>
+
+          {matchedCurves && tEndCommon !== null && (
+            <div className="charts-section">
+              <h2 style={{ marginTop: '40px', marginBottom: '20px' }}>Time-Activity Curves</h2>
+              <div className="charts-grid">
+                <div className="chart-container">
+                  <h3>0-5 min</h3>
+                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[0]) && (
+                    <Line
+                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[0])!}
+                      options={chartOptions}
+                    />
+                  )}
+                </div>
+                <div className="chart-container">
+                  <h3>0-10 min</h3>
+                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[1]) && (
+                    <Line
+                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[1])!}
+                      options={chartOptions}
+                    />
+                  )}
+                </div>
+                <div className="chart-container">
+                  <h3>10-end</h3>
+                  {createChartData(matchedCurves.real, matchedCurves.combined, timeCutoffs[1], tEndCommon) && (
+                    <Line
+                      data={createChartData(matchedCurves.real, matchedCurves.combined, timeCutoffs[1], tEndCommon)!}
+                      options={chartOptions}
+                    />
+                  )}
+                </div>
+                <div className="chart-container">
+                  <h3>Combined (Total)</h3>
+                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, tEndCommon) && (
+                    <Line
+                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, tEndCommon)!}
+                      options={chartOptions}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
