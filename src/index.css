@@ -366,12 +366,17 @@ tr:hover {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  min-height: 300px;
   width: 50%;
+  aspect-ratio: 3 / 2;
+  position: relative;
 }
 
 .charts-grid .chart-container {
   width: 100%;
+}
+
+.chart-container > div {
+  height: 100% !important;
 }
 
 .chart-container h3 {
