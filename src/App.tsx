@@ -256,34 +256,76 @@ function App() {
           tension: 0.1,
         },
       ],
+      // Store clipped data for scale calculation
+      realClipped,
+      combinedClipped,
+      startTime,
+      endTime,
     };
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      x: {
+  const createChartOptions = (chartData: any) => {
+    if (!chartData) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' as const },
+          title: { display: false },
+        },
+        scales: {
+          x: { title: { display: true, text: 'Time (min)' } },
+          y: { title: { display: true, text: 'Activity (Bq/ml)' } },
+        },
+      };
+    }
+
+    // Calculate min/max for x-axis (time)
+    const xMin = chartData.startTime;
+    const xMax = chartData.endTime;
+    const xPadding = (xMax - xMin) * 0.05; // 5% padding
+
+    // Calculate min/max for y-axis (activity)
+    const allActivities = [
+      ...chartData.realClipped.map((p: Point) => p.activity),
+      ...chartData.combinedClipped.map((p: Point) => p.activity),
+    ].filter((val: number | null) => val !== null) as number[];
+
+    const yMin = Math.min(...allActivities, 0); // Include 0 to show baseline
+    const yMax = Math.max(...allActivities);
+    const yPadding = (yMax - yMin) * 0.1; // 10% padding
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
         title: {
-          display: true,
-          text: 'Time (min)',
+          display: false,
         },
       },
-      y: {
-        title: {
-          display: true,
-          text: 'Activity (Bq/ml)',
+      scales: {
+        x: {
+          type: 'linear' as const,
+          min: Math.max(0, xMin - xPadding),
+          max: xMax + xPadding,
+          title: {
+            display: true,
+            text: 'Time (min)',
+          },
+        },
+        y: {
+          min: Math.max(0, yMin - yPadding),
+          max: yMax + yPadding,
+          title: {
+            display: true,
+            text: 'Activity (Bq/ml)',
+          },
         },
       },
-    },
+    };
   };
 
   return (
@@ -589,39 +631,51 @@ function App() {
               <div className="charts-grid">
                 <div className="chart-container">
                   <h3>0-5 min</h3>
-                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[0]) && (
-                    <Line
-                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[0])!}
-                      options={chartOptions}
-                    />
-                  )}
+                  {(() => {
+                    const chartData = createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[0]);
+                    return chartData && (
+                      <Line
+                        data={chartData}
+                        options={createChartOptions(chartData)}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="chart-container">
                   <h3>0-10 min</h3>
-                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[1]) && (
-                    <Line
-                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[1])!}
-                      options={chartOptions}
-                    />
-                  )}
+                  {(() => {
+                    const chartData = createChartData(matchedCurves.real, matchedCurves.combined, 0, timeCutoffs[1]);
+                    return chartData && (
+                      <Line
+                        data={chartData}
+                        options={createChartOptions(chartData)}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="chart-container">
                   <h3>10-end</h3>
-                  {createChartData(matchedCurves.real, matchedCurves.combined, timeCutoffs[1], tEndCommon) && (
-                    <Line
-                      data={createChartData(matchedCurves.real, matchedCurves.combined, timeCutoffs[1], tEndCommon)!}
-                      options={chartOptions}
-                    />
-                  )}
+                  {(() => {
+                    const chartData = createChartData(matchedCurves.real, matchedCurves.combined, timeCutoffs[1], tEndCommon);
+                    return chartData && (
+                      <Line
+                        data={chartData}
+                        options={createChartOptions(chartData)}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="chart-container">
                   <h3>Combined (Total)</h3>
-                  {createChartData(matchedCurves.real, matchedCurves.combined, 0, tEndCommon) && (
-                    <Line
-                      data={createChartData(matchedCurves.real, matchedCurves.combined, 0, tEndCommon)!}
-                      options={chartOptions}
-                    />
-                  )}
+                  {(() => {
+                    const chartData = createChartData(matchedCurves.real, matchedCurves.combined, 0, tEndCommon);
+                    return chartData && (
+                      <Line
+                        data={chartData}
+                        options={createChartOptions(chartData)}
+                      />
+                    );
+                  })()}
                 </div>
               </div>
             </div>
