@@ -244,8 +244,8 @@ function App() {
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           fill: true,
           tension: 0.1,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
         {
           label: 'Combined (IDIF)',
@@ -254,8 +254,8 @@ function App() {
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
           fill: true,
           tension: 0.1,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
       ],
       // Store clipped data for scale calculation
