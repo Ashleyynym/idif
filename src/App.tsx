@@ -42,6 +42,13 @@ function App() {
   const [tEndCommon, setTEndCommon] = useState<number | null>(null);
   const [decimalPlaces, setDecimalPlaces] = useState(4);
   const [matchedCurves, setMatchedCurves] = useState<{ real: Point[]; combined: Point[] } | null>(null);
+  const [xTickInterval, setXTickInterval] = useState<{ [key: string]: number }>({
+    '0-5': 1,
+    '0-10': 2,
+    '10-end': 20,
+    'combined': 20,
+  });
+  const [yTickInterval, setYTickInterval] = useState(5000);
   const realPasteRef = useRef<HTMLDivElement>(null);
   const combinedPasteRef = useRef<HTMLDivElement>(null);
 
@@ -264,7 +271,7 @@ function App() {
     };
   };
 
-  const createChartOptions = (chartData: any) => {
+  const createChartOptions = (chartData: any, chartType: string) => {
     if (!chartData) {
       return {
         responsive: true,
@@ -285,15 +292,19 @@ function App() {
     const xMax = chartData.endTime;
     const xPadding = (xMax - xMin) * 0.05; // 5% padding
 
-    // Calculate min/max for y-axis (activity)
+    // Get tick interval for this chart type
+    const xTick = xTickInterval[chartType] || 1;
+
+    // Calculate max for y-axis (activity)
     const allActivities = [
       ...chartData.realClipped.map((p: Point) => p.activity),
       ...chartData.combinedClipped.map((p: Point) => p.activity),
     ].filter((val: number | null) => val !== null) as number[];
 
-    const yMin = Math.min(...allActivities, 0); // Include 0 to show baseline
     const yMax = Math.max(...allActivities);
-    const yPadding = (yMax - yMin) * 0.1; // 10% padding
+    
+    // Round yMax up to nearest multiple of yTickInterval
+    const yMaxRounded = Math.ceil(yMax / yTickInterval) * yTickInterval;
 
     return {
       responsive: true,
@@ -311,14 +322,20 @@ function App() {
           type: 'linear' as const,
           min: Math.max(0, xMin - xPadding),
           max: xMax + xPadding,
+          ticks: {
+            stepSize: xTick,
+          },
           title: {
             display: true,
             text: 'Time (min)',
           },
         },
         y: {
-          min: Math.max(0, yMin - yPadding),
-          max: yMax + yPadding,
+          min: 0,
+          max: yMaxRounded,
+          ticks: {
+            stepSize: yTickInterval,
+          },
           title: {
             display: true,
             text: 'Activity (Bq/ml)',
@@ -570,6 +587,67 @@ function App() {
           </div>
         </div>
 
+        {results.length > 0 && (
+          <div className="controls" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
+            <h3 style={{ width: '100%', marginBottom: '15px', fontSize: '16px' }}>Chart Axis Scaling</h3>
+            <div className="control-item">
+              <label htmlFor="y-tick">Y-axis tick interval (Bq/ml)</label>
+              <input
+                id="y-tick"
+                type="number"
+                value={yTickInterval}
+                onChange={(e) => setYTickInterval(Math.max(1, parseFloat(e.target.value) || 5000))}
+                step="100"
+                min="1"
+              />
+            </div>
+            <div className="control-item">
+              <label htmlFor="x-tick-05">X-axis tick (0-5 min)</label>
+              <input
+                id="x-tick-05"
+                type="number"
+                value={xTickInterval['0-5']}
+                onChange={(e) => setXTickInterval({ ...xTickInterval, '0-5': Math.max(0.1, parseFloat(e.target.value) || 1) })}
+                step="0.1"
+                min="0.1"
+              />
+            </div>
+            <div className="control-item">
+              <label htmlFor="x-tick-010">X-axis tick (0-10 min)</label>
+              <input
+                id="x-tick-010"
+                type="number"
+                value={xTickInterval['0-10']}
+                onChange={(e) => setXTickInterval({ ...xTickInterval, '0-10': Math.max(0.1, parseFloat(e.target.value) || 2) })}
+                step="0.1"
+                min="0.1"
+              />
+            </div>
+            <div className="control-item">
+              <label htmlFor="x-tick-10end">X-axis tick (10-end)</label>
+              <input
+                id="x-tick-10end"
+                type="number"
+                value={xTickInterval['10-end']}
+                onChange={(e) => setXTickInterval({ ...xTickInterval, '10-end': Math.max(1, parseFloat(e.target.value) || 20) })}
+                step="1"
+                min="1"
+              />
+            </div>
+            <div className="control-item">
+              <label htmlFor="x-tick-combined">X-axis tick (Combined)</label>
+              <input
+                id="x-tick-combined"
+                type="number"
+                value={xTickInterval['combined']}
+                onChange={(e) => setXTickInterval({ ...xTickInterval, 'combined': Math.max(1, parseFloat(e.target.value) || 20) })}
+                step="1"
+                min="1"
+              />
+            </div>
+          </div>
+        )}
+
         <button onClick={handleCompute}>Compute AUC Table</button>
       </div>
 
@@ -636,7 +714,7 @@ function App() {
                     return chartData && (
                       <Line
                         data={chartData}
-                        options={createChartOptions(chartData)}
+                        options={createChartOptions(chartData, '0-5')}
                       />
                     );
                   })()}
@@ -648,7 +726,7 @@ function App() {
                     return chartData && (
                       <Line
                         data={chartData}
-                        options={createChartOptions(chartData)}
+                        options={createChartOptions(chartData, '0-10')}
                       />
                     );
                   })()}
@@ -660,7 +738,7 @@ function App() {
                     return chartData && (
                       <Line
                         data={chartData}
-                        options={createChartOptions(chartData)}
+                        options={createChartOptions(chartData, '10-end')}
                       />
                     );
                   })()}
@@ -672,7 +750,7 @@ function App() {
                     return chartData && (
                       <Line
                         data={chartData}
-                        options={createChartOptions(chartData)}
+                        options={createChartOptions(chartData, 'combined')}
                       />
                     );
                   })()}
