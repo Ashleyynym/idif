@@ -273,6 +273,7 @@ function App() {
 
   // Helper function to calculate nice tick interval
   const calculateNiceTickInterval = (range: number, targetTicks: number = 5): number => {
+    if (range === 0) return 1;
     const rawInterval = range / targetTicks;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawInterval)));
     const normalized = rawInterval / magnitude;
@@ -284,6 +285,39 @@ function App() {
     else niceInterval = 10;
     
     return niceInterval * magnitude;
+  };
+
+  // Helper function to calculate nice min/max with padding
+  const calculateNiceRange = (min: number, max: number, paddingPercent: number = 0.25): { min: number, max: number } => {
+    if (min === max) {
+      // Handle edge case where all values are the same
+      const padding = Math.max(1, Math.abs(min) * paddingPercent);
+      return { min: min - padding, max: max + padding };
+    }
+
+    const range = max - min;
+    const padding = range * paddingPercent;
+    
+    // Calculate magnitude for rounding
+    const magnitude = Math.pow(10, Math.floor(Math.log10(Math.abs(max))));
+    
+    // Round to nice values based on magnitude
+    // For example: if max is 4000, magnitude is 1000, we want to round to 5000
+    let roundStep;
+    if (magnitude >= 1000) {
+      roundStep = magnitude / 10; // For 4000, roundStep = 100, so we can round to 5000
+    } else if (magnitude >= 100) {
+      roundStep = magnitude / 10; // For 400, roundStep = 10, so we can round to 500
+    } else if (magnitude >= 10) {
+      roundStep = magnitude / 10; // For 40, roundStep = 1, so we can round to 50
+    } else {
+      roundStep = 1;
+    }
+    
+    const niceMin = Math.floor((min - padding) / roundStep) * roundStep;
+    const niceMax = Math.ceil((max + padding) / roundStep) * roundStep;
+    
+    return { min: niceMin, max: niceMax };
   };
 
   const createChartOptions = (chartData: any, chartType: string) => {
@@ -315,15 +349,25 @@ function App() {
       ? xTickInterval[chartType]! 
       : autoXTick;
 
-    // Calculate max for y-axis (activity)
+    // Calculate min/max for y-axis (activity)
     const allActivities = [
       ...chartData.realClipped.map((p: Point) => p.activity),
       ...chartData.combinedClipped.map((p: Point) => p.activity),
     ].filter((val: number | null) => val !== null) as number[];
 
-    const yMax = Math.max(...allActivities);
-    const yMin = Math.min(...allActivities, 0);
-    const yRange = yMax - yMin;
+    const yDataMin = Math.min(...allActivities);
+    const yDataMax = Math.max(...allActivities);
+    
+    // Calculate nice range with padding (about 20-25% padding)
+    // If data doesn't go negative, ensure we show 0 or close to it
+    const yMinForRange = yDataMin < 0 ? yDataMin : Math.min(0, yDataMin);
+    const paddingPercent = 0.2; // 20% padding
+    const { min: yMin, max: yMax } = calculateNiceRange(yMinForRange, yDataMax, paddingPercent);
+    
+    // Ensure we show 0 if data is all positive
+    const finalYMin = yDataMin >= 0 ? Math.max(0, yMin) : yMin;
+    
+    const yRange = yMax - finalYMin;
     
     // Automatically calculate y-axis tick interval based on range
     const autoYTick = calculateNiceTickInterval(yRange, 5);
@@ -332,7 +376,8 @@ function App() {
       ? yTickInterval 
       : autoYTick;
     
-    // Round yMax up to nearest multiple of tick interval
+    // Round to nice values based on tick interval
+    const yMinRounded = Math.floor(finalYMin / finalYTick) * finalYTick;
     const yMaxRounded = Math.ceil(yMax / finalYTick) * finalYTick;
 
     return {
@@ -360,7 +405,7 @@ function App() {
           },
         },
         y: {
-          min: 0,
+          min: yMinRounded,
           max: yMaxRounded,
           ticks: {
             stepSize: finalYTick,
